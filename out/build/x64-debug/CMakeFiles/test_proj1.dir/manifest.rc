@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "C:/Users/Nikolay/source/repos/test_proj1/out/build/x64-debug/CMakeFiles/test_proj1.dir/embed.manifest"
