@@ -9,7 +9,7 @@ list(APPEND CMAKE_PREFIX_PATH "C:/IT_libs/Qt/6.4.1/msvc2019_64/bin")
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-add_executable(test_proj1 test_proj1.cpp "Qtapp.cpp" "Qtapp.h" "udpOn.cpp" "udpOn.h")
+add_executable(test_proj1 test_proj1.cpp "Qtapp.cpp" "Qtapp.h" "udpOn.cpp" "udpOn.h" "kih-alg.cpp" "kih-alg.h")
 
 target_link_libraries(test_proj1 PRIVATE Qt6::Core)
 target_link_libraries(test_proj1 PRIVATE Qt6::Widgets)
