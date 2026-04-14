@@ -2,10 +2,9 @@
 #include <ws2tcpip.h>
 #include <cstring>
 
-#define PORT 50006
 #define BUFFER_SIZE 1024
 
-UdpOn::UdpOn(QObject* parent) : QObject(parent), m_running(false), m_socket(INVALID_SOCKET) {}
+UdpOn::UdpOn(QObject* parent, int port, const char* addres) : QObject(parent), m_running(false), m_socket(INVALID_SOCKET), PORT(port), ADDR(addres) {}
 
 UdpOn::~UdpOn() {
     stop();
@@ -42,7 +41,7 @@ void UdpOn::run() {
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
 
-    const char* ip_address = "127.0.0.1";
+    const char* ip_address = ADDR;
 
     if (bind(m_socket, (const struct sockaddr*)&servaddr, sizeof(servaddr)) == SOCKET_ERROR) {
         emit logMessage(QString("Error: failed to bind. Code: %1").arg(WSAGetLastError()));

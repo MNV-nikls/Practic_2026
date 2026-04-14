@@ -9,9 +9,8 @@ class UdpOn : public QObject {
     Q_OBJECT
 
 public:
-    explicit UdpOn(QObject* parent = nullptr);
+    explicit UdpOn(QObject* parent = nullptr, int port = 50005, const char* addres = "127.0.0.1");
     ~UdpOn();
-
     void stop();
 
 public slots:
@@ -25,4 +24,6 @@ signals:
 private:
     std::atomic<bool> m_running; 
     SOCKET m_socket;
+    const char* ADDR;
+    int PORT;
 };
