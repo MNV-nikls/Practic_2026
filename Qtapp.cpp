@@ -17,12 +17,16 @@ QtApp::QtApp(QWidget* parent) : QWidget(parent) {
     btnStop = new QPushButton("Stop Listening", this);
     btnStop->setEnabled(false);
 
+    SEND_IP = QString("127.0.0.1");
+    SEND_PORT = 50005;
+
     inputTarget = new QDoubleSpinBox(this);
     inputTarget->setRange(-1000000.0, 1000000.0); 
     inputTarget->setDecimals(2);                  
     inputTarget->setValue(0.0);                   
 
     btnSendTarget = new QPushButton("Send Target", this);
+    btnSendIP = new QPushButton("Apply Settings", this);
 
     QHBoxLayout* buttonsLayout = new QHBoxLayout();
     buttonsLayout->addWidget(btnStart);
@@ -32,10 +36,10 @@ QtApp::QtApp(QWidget* parent) : QWidget(parent) {
     QVBoxLayout* ipSendLayout = new QVBoxLayout();
     QVBoxLayout* targetLayout = new QVBoxLayout();
 
-    ipRecieveInput = new QLineEdit(this);
-    ipSendInput = new QLineEdit(this);
-    portRecieveInput = new QSpinBox(this);
-    portSendInput = new QSpinBox(this);
+    ipRecieveInput = new QLineEdit();
+    ipSendInput = new QLineEdit();
+    portRecieveInput = new QSpinBox();
+    portSendInput = new QSpinBox();
 
     ipRecieveInput->setText(QString("127.0.0.1"));
     ipSendInput->setText(QString("127.0.0.1"));
@@ -54,7 +58,6 @@ QtApp::QtApp(QWidget* parent) : QWidget(parent) {
 
     targetLayout->addWidget(new QLabel("Target:", this));
     targetLayout->addWidget(inputTarget);
-    
 
     series = new QLineSeries();
     lineK = new QLineSeries();
@@ -93,14 +96,20 @@ QtApp::QtApp(QWidget* parent) : QWidget(parent) {
     serverInputs->addLayout(ipSendLayout);
     serverInputs->addLayout(targetLayout);
 
-    QVBoxLayout* serverButtons = new QVBoxLayout();
-    serverButtons->addLayout(serverInputs);
+    QHBoxLayout* serverButtons = new QHBoxLayout();
+    serverButtons->addWidget(btnSendIP);
     serverButtons->addWidget(btnSendTarget);
+
+    QVBoxLayout* bottomPanel = new QVBoxLayout();
+    bottomPanel->addLayout(serverInputs);
+    bottomPanel->addLayout(serverButtons);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(buttonsLayout);
     mainLayout->addWidget(chartView);
-    mainLayout->addLayout(serverButtons);
+    mainLayout->addLayout(bottomPanel);
+    //logConsole->setText(QString("-"));
+    //mainLayout->addWidget(logConsole);
     setLayout(mainLayout);
 
     connect(btnStart, &QPushButton::clicked, this, &QtApp::startServer);
@@ -109,6 +118,7 @@ QtApp::QtApp(QWidget* parent) : QWidget(parent) {
     renderTimer = new QTimer(this);
     connect(renderTimer, &QTimer::timeout, this, &QtApp::updateUI);
     connect(btnSendTarget, &QPushButton::clicked, this, &QtApp::sendTargetValue);
+    connect(btnSendIP, &QPushButton::clicked, this, &QtApp::applySettings);
 }
 
 QtApp::~QtApp() {
@@ -149,8 +159,9 @@ void QtApp::startServer() {
     btnStart->setEnabled(false);
     btnStop->setEnabled(true);
 
-    btnSendTarget->setEnabled(false);
-    inputTarget->setEnabled(false);
+    btnSendIP->setEnabled(false);
+    //btnSendTarget->setEnabled(false);
+    //inputTarget->setEnabled(false);
 
     int recievePort = portRecieveInput->value();
     QString recieveIP = ipRecieveInput->text();
@@ -178,7 +189,7 @@ void QtApp::startServer() {
     bih->moveToThread(bihThread);
 
     connect(secThread, &QThread::started, signaler, &UdpOn::run);
-    connect(signaler, &UdpOn::logMessage, this, &QtApp::appendLog);
+    //connect(signaler, &UdpOn::logMessage, this, &QtApp::appendLog);
     connect(signaler, &UdpOn::dataParsed, this, &QtApp::handleData);
 
     connect(kihThread, &QThread::started, kih, &Kih::run);
@@ -200,8 +211,9 @@ void QtApp::startServer() {
 
 void QtApp::stopServer() {
     btnStop->setEnabled(false);
-    btnSendTarget->setEnabled(true);
-    inputTarget->setEnabled(true);
+    //btnSendTarget->setEnabled(true);
+    //inputTarget->setEnabled(true);
+    btnSendIP->setEnabled(true);
     renderTimer->stop();
     if (signaler) {
         signaler->stop();
@@ -216,8 +228,8 @@ void QtApp::stopServer() {
 
 void QtApp::sendTargetValue() {
     float targetValue = static_cast<float>(inputTarget->value());
-    int sendPort = portSendInput->value();
-    QString sendIP = ipSendInput->text();
+    //int sendPort = portSendInput->value();
+    //QString sendIP = ipSendInput->text();
     SOCKET sendSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sendSock == INVALID_SOCKET) {
         appendLog("Error: Could not create socket for sending.");
@@ -227,9 +239,9 @@ void QtApp::sendTargetValue() {
     struct sockaddr_in dest;
     ZeroMemory(&dest, sizeof(dest));
     dest.sin_family = AF_INET;
-    dest.sin_port = htons(sendPort);
-    const char* targetIp = (sendIP.toLocal8Bit()).data();
-    inet_pton(AF_INET, targetIp, &dest.sin_addr);
+    dest.sin_port = htons(SEND_PORT);
+    //const char* targetIp = SEND_IP.toLocal8Bit().data();
+    inet_pton(AF_INET, SEND_IP.toLocal8Bit().data(), &dest.sin_addr);
 
     char payload[sizeof(float)];
     std::memcpy(payload, &targetValue, sizeof(float));
@@ -237,13 +249,18 @@ void QtApp::sendTargetValue() {
     int bytesSent = sendto(sendSock, payload, sizeof(float), 0, (struct sockaddr*)&dest, sizeof(dest));
 
     if (bytesSent == SOCKET_ERROR) {
-        appendLog(QString("Error sending target value. Code: %1").arg(WSAGetLastError()));
+        //appendLog(QString("Error sending target value. Code: %1").arg(WSAGetLastError()));
     }
     else {
         appendLog(QString("Successfully sent target value: %1").arg(static_cast<double>(targetValue)));
     }
 
     closesocket(sendSock);
+}
+
+void QtApp::applySettings() {
+    SEND_IP = ipSendInput->text();
+    SEND_PORT = portSendInput->value();
 }
 
 void QtApp::onWorkerFinished() {
@@ -278,7 +295,7 @@ void QtApp::onWorkerFinished() {
 }
 
 void QtApp::appendLog(const QString& msg) {
-    //logConsole->append(msg);
+    //logConsole->setText(msg);
 }
 
 void QtApp::handleData(uint32_t time, float value) {

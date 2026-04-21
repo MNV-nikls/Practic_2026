@@ -41,6 +41,7 @@ private slots:
     void onWorkerFinished();
     void updateUI();
     void sendTargetValue();
+    void applySettings();
 
 signals:
     void toFilter(uint32_t time, float value);
@@ -68,6 +69,7 @@ private:
     QSpinBox* portSendInput;
     QDoubleSpinBox* inputTarget;
     QPushButton* btnSendTarget;
+    QPushButton* btnSendIP;
 
     QChart* chart;
     QLineSeries* series;
@@ -82,5 +84,8 @@ private:
     QList<QPointF> pointsBuffer;
     QList<QPointF> kihBuffer;
     QList<QPointF> bihBuffer;
+
+    int SEND_PORT;
+    QString SEND_IP;
 
 };
